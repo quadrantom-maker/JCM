@@ -343,14 +343,17 @@
         }
 
         // Fetch Data from Google Sheets
-        async function refreshData() {
+        async function refreshData(background = false) {
             if (!scriptUrl) {
                 document.getElementById('syncStatus').innerHTML = '⚠️ No Script URL Configured';
                 document.getElementById('syncStatus').className = 'text-amber-600 font-bold';
                 return;
             }
 
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            // Only show loading spinner if it's a manual sync, not background periodic sync
+            if (!background) {
+                document.getElementById('loadingOverlay').classList.remove('hidden');
+            }
             try {
                 const response = await fetch(scriptUrl);
                 const data = await response.json();
@@ -381,7 +384,9 @@
                 document.getElementById('syncStatus').innerHTML = '🔴 Sync Failed';
                 document.getElementById('syncStatus').className = 'text-red-600 font-bold';
             } finally {
-                document.getElementById('loadingOverlay').classList.add('hidden');
+                if (!background) {
+                    document.getElementById('loadingOverlay').classList.add('hidden');
+                }
             }
         }
 
@@ -391,7 +396,7 @@
                 openConfigModal();
                 return;
             }
-            document.getElementById('loadingOverlay').classList.remove('hidden');
+            // Perform background sync update without locking the entire UI overlay
             try {
                 await fetch(scriptUrl, {
                     method: 'POST',
@@ -399,13 +404,12 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'save', job: jobData })
                 });
-                // Allow a brief moment for Apps Script to commit write
+                // Silently refresh in the background after save commit
                 setTimeout(() => {
-                    refreshData();
-                }, 1500);
+                    refreshData(true);
+                }, 1200);
             } catch (err) {
                 console.error('Save error:', err);
-                document.getElementById('loadingOverlay').classList.add('hidden');
                 speakText("Failed to save to cloud sheet. Check your network or URL.");
             }
         }
@@ -695,10 +699,10 @@
                 scriptUrl = defaultScriptUrl;
                 localStorage.setItem('jcm_script_url', scriptUrl);
             }
-            refreshData();
-            // Auto-refresh cloud sheet every 30 seconds for live multi-user sync
+            refreshData(false);
+            // Auto-refresh cloud sheet silently in background every 30 seconds for live multi-user sync
             setInterval(() => {
-                if (scriptUrl) refreshData();
+                if (scriptUrl) refreshData(true);
             }, 30000);
         };
     </script>
