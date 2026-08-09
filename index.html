@@ -311,7 +311,8 @@
     </div>
 
     <script>
-        let scriptUrl = localStorage.getItem('jcm_script_url') || '';
+        let defaultScriptUrl = 'https://script.google.com/macros/s/AKfycbzZPuop8dj9iK65KZUkl_wQLn2FE1cRYs2hoXZ2xA6FOuJsv8OV2Kdjoh1vzMdFsJSm/exec';
+        let scriptUrl = localStorage.getItem('jcm_script_url') || defaultScriptUrl;
         let allJobs = [];
         let speechSettings = { rate: 1.0, pitch: 1.0, voiceIndex: 0 };
         let availableVoices = [];
@@ -691,10 +692,10 @@
 
         window.onload = function() {
             if (!scriptUrl) {
-                openConfigModal();
-            } else {
-                refreshData();
+                scriptUrl = defaultScriptUrl;
+                localStorage.setItem('jcm_script_url', scriptUrl);
             }
+            refreshData();
             // Auto-refresh cloud sheet every 30 seconds for live multi-user sync
             setInterval(() => {
                 if (scriptUrl) refreshData();
