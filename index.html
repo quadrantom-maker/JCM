@@ -97,10 +97,12 @@
 
         @media print {
             body { background: white !important; margin: 0; padding: 0; }
+            @page { margin: 10mm; } /* Minimizes default printer margins */
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             .win7-panel { border: 2px solid #000 !important; box-shadow: none !important; background: white !important; }
             .main-app-container { display: none !important; } /* Hides main UI during print */
+            .avoid-break { page-break-inside: avoid; } /* Prevents sections from splitting across pages */
         }
         .print-only { display: none; }
     </style>
@@ -723,64 +725,64 @@
 
             const printContainer = document.getElementById('printContainer');
             
-            // Format updates
+            // Format updates - using tighter spacing to fit on one page
             let updatesHtml = '';
             const updatesArr = Array.isArray(job.updates) ? job.updates : [];
             if (updatesArr.length > 0) {
                 updatesHtml = `
-                    <div class="mt-6 border border-slate-800 rounded-lg overflow-hidden">
-                        <div class="bg-slate-100 border-b border-slate-800 p-2">
-                            <h3 class="font-bold text-sm text-slate-800 uppercase">Ticket Updates History</h3>
+                    <div class="mt-4 border border-slate-800 rounded-lg overflow-hidden avoid-break">
+                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                            <h3 class="font-bold text-xs text-slate-800 uppercase">Ticket Updates History</h3>
                         </div>
-                        <div class="p-4 space-y-3">
+                        <div class="p-3 space-y-2">
                 `;
                 updatesArr.forEach(up => {
                     updatesHtml += `
-                        <div class="border-b border-slate-200 pb-2 last:border-0 last:pb-0">
-                            <p class="text-xs text-slate-500 mb-1"><strong>${up.timestamp}</strong> - By: ${up.author}</p>
-                            <p class="text-sm text-slate-800">${up.text}</p>
+                        <div class="border-b border-slate-200 pb-1.5 last:border-0 last:pb-0">
+                            <p class="text-[11px] text-slate-500 mb-0.5"><strong>${up.timestamp}</strong> - By: ${up.author}</p>
+                            <p class="text-xs text-slate-800">${up.text}</p>
                         </div>
                     `;
                 });
                 updatesHtml += `</div></div>`;
             }
 
-            // Create the document structure
+            // Create the document structure - Optimized for a single page
             printContainer.innerHTML = `
-                <div class="text-center border-b-2 border-slate-800 pb-6 mb-6">
-                    <img src="OIL OFFER.png" alt="JCM Logo" class="h-20 object-contain mx-auto mb-3" onerror="this.onerror=null;this.src='https://placehold.co/150x60/ffffff/1e293b?text=JCM+Logo';">
-                    <h1 class="text-3xl font-black text-slate-800 uppercase tracking-wider">Job Card Management (JCM)</h1>
-                    <p class="text-slate-500 mt-1 font-semibold">Official Job Card & Service Record</p>
+                <div class="text-center border-b-2 border-slate-800 pb-4 mb-4">
+                    <img src="OIL OFFER.png" alt="JCM Logo" class="h-16 object-contain mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x50/ffffff/1e293b?text=JCM+Logo';">
+                    <h1 class="text-2xl font-black text-slate-800 uppercase tracking-wider">JCM Report</h1>
+                    <p class="text-slate-500 mt-0.5 font-semibold text-[11px]">Official Job Card & Service Record</p>
                 </div>
                 
-                <div class="grid grid-cols-2 gap-6 mb-6">
-                    <div class="border border-slate-800 rounded-lg overflow-hidden">
-                        <div class="bg-slate-100 border-b border-slate-800 p-2">
-                            <h3 class="font-bold text-sm text-slate-800 uppercase">Customer Information</h3>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
+                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                            <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Information</h3>
                         </div>
-                        <div class="p-4 space-y-2 text-sm">
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Name:</span> ${job.customerName}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Phone:</span> ${job.phoneNumber}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Created By:</span> ${job.createdBy}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Date Logged:</span> ${new Date(job.createdAt).toLocaleString()}</p>
+                        <div class="p-3 space-y-1.5 text-xs">
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Name:</span> ${job.customerName}</p>
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Phone:</span> ${job.phoneNumber}</p>
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Created By:</span> ${job.createdBy}</p>
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Date Logged:</span> ${new Date(job.createdAt).toLocaleString()}</p>
                         </div>
                     </div>
                     
-                    <div class="border border-slate-800 rounded-lg overflow-hidden">
-                        <div class="bg-slate-100 border-b border-slate-800 p-2">
-                            <h3 class="font-bold text-sm text-slate-800 uppercase">Vehicle Information</h3>
+                    <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
+                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                            <h3 class="font-bold text-xs text-slate-800 uppercase">Vehicle Information</h3>
                         </div>
-                        <div class="p-4 space-y-2 text-sm">
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Vehicle:</span> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-24">VIN:</span> <span class="font-mono">${job.vinNumber || 'N/A'}</span></p>
-                            <p><span class="font-bold text-slate-600 inline-block w-24">Mileage:</span> ${job.mileage} KM</p>
-                            <div class="flex items-center gap-2 mt-2">
-                                <span class="font-bold text-slate-600 inline-block w-24">License Plate:</span>
-                                <div class="omani-plate" style="background-color: ${job.plateColor || '#fde047'}; height: 28px;">
-                                    <div class="omani-plate-header" style="font-size: 8px;"><span>OMAN</span></div>
-                                    <div class="omani-plate-body">
-                                        <span class="text-xs font-black text-black">${job.plateCode || 'A'}</span>
-                                        <span class="text-sm font-black text-black">${job.plateNumber}</span>
+                        <div class="p-3 space-y-1.5 text-xs">
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Vehicle:</span> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</p>
+                            <p><span class="font-bold text-slate-600 inline-block w-20">VIN:</span> <span class="font-mono">${job.vinNumber || 'N/A'}</span></p>
+                            <p><span class="font-bold text-slate-600 inline-block w-20">Mileage:</span> ${job.mileage} KM</p>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="font-bold text-slate-600 inline-block w-20">License Plate:</span>
+                                <div class="omani-plate" style="background-color: ${job.plateColor || '#fde047'}; height: 24px;">
+                                    <div class="omani-plate-header" style="font-size: 7px; padding: 0 4px;"><span>OMAN</span></div>
+                                    <div class="omani-plate-body" style="padding: 0 6px; gap: 4px;">
+                                        <span class="text-[10px] font-black text-black">${job.plateCode || 'A'}</span>
+                                        <span class="text-xs font-black text-black">${job.plateNumber}</span>
                                     </div>
                                 </div>
                             </div>
@@ -788,31 +790,31 @@
                     </div>
                 </div>
 
-                <div class="border border-slate-800 rounded-lg overflow-hidden mb-6">
-                    <div class="bg-slate-100 border-b border-slate-800 p-2">
-                        <h3 class="font-bold text-sm text-slate-800 uppercase">Customer Complaints / Issues</h3>
+                <div class="border border-slate-800 rounded-lg overflow-hidden mb-4 avoid-break">
+                    <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                        <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Complaints / Issues</h3>
                     </div>
-                    <div class="p-4">
-                        <p class="text-sm text-slate-800 whitespace-pre-wrap font-medium">${job.complaints}</p>
+                    <div class="p-3">
+                        <p class="text-xs text-slate-800 whitespace-pre-wrap font-medium leading-relaxed">${job.complaints}</p>
                     </div>
                 </div>
 
                 ${updatesHtml}
 
-                <div class="mt-20 pt-10 flex justify-between px-12">
-                    <div class="text-center w-64">
-                        <div class="border-b-2 border-slate-800 w-full mb-3"></div>
-                        <p class="font-bold text-slate-800 uppercase text-sm">Technician Signature</p>
-                        <p class="text-xs text-slate-500 mt-1">Date: ____/____/20__</p>
+                <div class="mt-12 pt-4 flex justify-between px-12 avoid-break">
+                    <div class="text-center w-56">
+                        <div class="border-b-2 border-slate-800 w-full mb-2"></div>
+                        <p class="font-bold text-slate-800 uppercase text-xs">Technician Signature</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
                     </div>
-                    <div class="text-center w-64">
-                        <div class="border-b-2 border-slate-800 w-full mb-3"></div>
-                        <p class="font-bold text-slate-800 uppercase text-sm">Final Control Signature</p>
-                        <p class="text-xs text-slate-500 mt-1">Date: ____/____/20__</p>
+                    <div class="text-center w-56">
+                        <div class="border-b-2 border-slate-800 w-full mb-2"></div>
+                        <p class="font-bold text-slate-800 uppercase text-xs">Final Control Signature</p>
+                        <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
                     </div>
                 </div>
-                <div class="text-center mt-12 text-xs text-slate-400">
-                    Generated by JCM (Job Card Management) Cloud System
+                <div class="text-center mt-6 text-[10px] text-slate-400 avoid-break">
+                    Generated by JCM Cloud System
                 </div>
             `;
 
