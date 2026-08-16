@@ -62,39 +62,6 @@
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 5px rgba(59, 130, 246, 0.3);
         }
 
-        /* Omani License Plate Exact Styling Match */
-        .omani-plate {
-            display: inline-flex;
-            align-items: center;
-            border: 2px solid #111;
-            border-radius: 4px;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-            height: 28px;
-        }
-        .omani-plate-header {
-            background-color: #ffffff;
-            color: #111;
-            padding: 0 6px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-right: 2px solid #111;
-            font-size: 8px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-        .omani-plate-body {
-            padding: 0 10px;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
-
         @media print {
             body { background: white !important; margin: 0; padding: 0; }
             @page { margin: 10mm; }
@@ -132,16 +99,15 @@
                     <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
                     <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="Default is password123">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg shadow-blue-500/30 mt-4">
+                <button type="submit" id="loginSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg shadow-blue-500/30 mt-4">
                     Sign In
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- MAIN APP CONTAINER (Hidden until login) -->
+    <!-- MAIN APP CONTAINER -->
     <div id="mainApp" class="max-w-7xl mx-auto main-app-container hidden">
-        <!-- Top Navigation / Header -->
         <header class="win7-panel mb-6 p-4 flex flex-col lg:flex-row justify-between items-center gap-4 no-print">
             <div class="flex items-center gap-3 shrink-0">
                 <div class="w-10 h-10 rounded-lg bg-white border border-slate-300 flex items-center justify-center overflow-hidden shadow-inner p-1">
@@ -153,7 +119,6 @@
                 </div>
             </div>
 
-            <!-- Search Bar -->
             <div class="w-full lg:flex-1 max-w-md mx-auto">
                 <div class="relative flex items-center">
                     <span class="absolute left-3 text-slate-400 text-sm">🔍</span>
@@ -176,7 +141,6 @@
             </div>
         </header>
 
-        <!-- Loading Overlay for Sync -->
         <div id="loadingOverlay" class="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center hidden no-print">
             <div class="win7-panel px-6 py-4 flex items-center gap-3 shadow-xl">
                 <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -205,7 +169,6 @@
                     <label class="block text-xs font-bold text-slate-700 text-blue-700">Assign Technician *</label>
                     <select id="assignedTo" required class="win7-input w-full px-3 py-1.5 text-sm border-blue-300 bg-blue-50">
                         <option value="">-- Select Staff --</option>
-                        <!-- Populated by JS -->
                     </select>
                 </div>
                 <div class="space-y-1">
@@ -213,7 +176,6 @@
                     <input type="text" id="vinNumber" class="win7-input w-full px-3 py-1.5 text-sm uppercase" placeholder="17-character VIN">
                 </div>
                 
-                <!-- Omani License Plate Specification Group -->
                 <div class="space-y-1 sm:col-span-2 lg:col-span-2 bg-slate-100/80 p-3 rounded-lg border border-slate-300">
                     <label class="block text-xs font-bold text-slate-700 mb-1">Omani Plate Specification *</label>
                     <div class="grid grid-cols-3 gap-2">
@@ -293,7 +255,6 @@
             </section>
         </main>
 
-        <!-- Update Modal -->
         <div id="updateModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
             <div class="win7-panel w-full max-w-lg overflow-hidden shadow-2xl">
                 <div class="win7-header px-4 py-3 flex justify-between items-center">
@@ -317,10 +278,8 @@
                 </form>
             </div>
         </div>
-
     </div>
 
-    <!-- Print Container -->
     <div id="printContainer" class="print-only max-w-4xl mx-auto p-8 bg-white text-black font-sans"></div>
 
     <script>
@@ -329,9 +288,8 @@
         let currentUser = null;
         let cloudStaffList = null;
 
-        // --- AUTHENTICATION & STAFF LOGIC ---
         async function getStaffList() {
-            if (cloudStaffList) return cloudStaffList; // return cached list if already loaded
+            if (cloudStaffList) return cloudStaffList;
 
             const defaultStaff = [
                 { id: 1, name: 'Admin User', role: 'Garage Owner', username: 'admin', active: true },
@@ -347,11 +305,10 @@
                     return data;
                 }
             } catch (err) {
-                console.error("Could not fetch staff from cloud, using local fallback.", err);
+                console.warn("Could not fetch staff from cloud, using fallback.", err);
             }
             
-            const stored = localStorage.getItem('jcm_shared_staff');
-            cloudStaffList = stored ? JSON.parse(stored) : defaultStaff;
+            cloudStaffList = defaultStaff;
             return cloudStaffList;
         }
 
@@ -373,29 +330,34 @@
 
         async function handleStaffLogin(e) {
             e.preventDefault();
+            const submitBtn = document.getElementById('loginSubmitBtn');
+            const errBox = document.getElementById('loginError');
             
-            // Show loading state on button
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = 'Authenticating with Cloud...';
+            submitBtn.innerHTML = 'Signing In...';
             submitBtn.disabled = true;
+            errBox.classList.add('hidden');
 
-            const userIn = document.getElementById('loginUsername').value.trim();
+            const userIn = document.getElementById('loginUsername').value.trim().toLowerCase();
             const passIn = document.getElementById('loginPassword').value;
-            const staffList = await getStaffList();
-            
-            // Allow basic password check for demo purposes
-            const user = staffList.find(s => s.username === userIn && s.active);
-            if (user && (passIn === 'password123' || passIn === 'admin')) {
-                sessionStorage.setItem('jcm_logged_in_user', JSON.stringify(user));
-                checkLoginState();
-                document.getElementById('loginError').classList.add('hidden');
-            } else {
-                document.getElementById('loginError').classList.remove('hidden');
+
+            try {
+                const staffList = await getStaffList();
+                const user = staffList.find(s => s.username.toLowerCase() === userIn && String(s.active).toUpperCase() === 'TRUE');
+                
+                if (user && (passIn === 'password123' || passIn === 'admin')) {
+                    sessionStorage.setItem('jcm_logged_in_user', JSON.stringify(user));
+                    checkLoginState();
+                    errBox.classList.add('hidden');
+                } else {
+                    errBox.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Login verification error:", err);
+                errBox.classList.remove('hidden');
+            } finally {
+                submitBtn.innerHTML = 'Sign In';
+                submitBtn.disabled = false;
             }
-            
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
         }
 
         function handleLogout() {
@@ -408,13 +370,12 @@
 
         async function populateStaffDropdowns() {
             const staffList = await getStaffList();
-            const activeStaff = staffList.filter(s => s.active);
+            const activeStaff = staffList.filter(s => String(s.active).toUpperCase() === 'TRUE');
             const select = document.getElementById('assignedTo');
             select.innerHTML = '<option value="">-- Select Technician --</option>' + 
                 activeStaff.map(s => `<option value="${s.name}">${s.name} (${s.role})</option>`).join('');
         }
 
-        // --- DATA SYNCING ---
         async function refreshData(background = false) {
             if (!background) document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
@@ -426,7 +387,7 @@
                     customerName: item.customerName,
                     phoneNumber: item.phoneNumber,
                     createdBy: item.createdBy,
-                    assignedTo: item.assignedTo || 'Unassigned', // NEW FIELD
+                    assignedTo: item.assignedTo || 'Unassigned',
                     vinNumber: item.vinNumber,
                     vehicleType: item.vehicleType,
                     vehicleModel: item.vehicleModel,
@@ -452,20 +413,6 @@
             }
         }
 
-        async function saveJobToCloud(jobData) {
-            try {
-                await fetch(scriptUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'save', job: jobData })
-                });
-                setTimeout(() => refreshData(true), 1200);
-            } catch (err) {
-                console.error('Save error:', err);
-            }
-        }
-
         function toggleJobForm() {
             const container = document.getElementById('jobFormContainer');
             const btn = document.getElementById('toggleFormBtn');
@@ -482,7 +429,7 @@
             }
         }
 
-        function handleJobSubmit(event) {
+        async function handleJobSubmit(event) {
             event.preventDefault();
             const editId = document.getElementById('editId').value;
             const now = Date.now();
@@ -506,8 +453,8 @@
                 createdAt: existingJob ? existingJob.createdAt : now,
                 customerName: document.getElementById('customerName').value.trim(),
                 phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                createdBy: currentUser.name, // Tied to logged in user
-                assignedTo: document.getElementById('assignedTo').value, // New assignment logic
+                createdBy: currentUser.name,
+                assignedTo: document.getElementById('assignedTo').value,
                 vinNumber: document.getElementById('vinNumber').value.trim().toUpperCase(),
                 vehicleType: document.getElementById('vehicleType').value.trim(),
                 vehicleModel: document.getElementById('vehicleModel').value.trim(),
@@ -522,17 +469,120 @@
                 closedAt: existingJob ? existingJob.closedAt : ''
             };
 
-        window.onload = async function() {
-            // Pre-fetch staff list in background so it's ready for login check
-            getStaffList();
-            checkLoginState();
-            setInterval(() => { if (currentUser) refreshData(true); }, 30000);
-            setInterval(() => {
-                document.querySelectorAll('.time-elapsed').forEach(el => {
-                    const ts = Number(el.getAttribute('data-timestamp'));
-                    if (ts) el.innerHTML = `⏱️ ${getTimeSince(ts)}`;
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'save', job: jobData })
                 });
-            }, 60000);
+                toggleJobForm();
+                setTimeout(() => refreshData(true), 1000);
+            } catch (err) {
+                console.error('Save error:', err);
+            }
+        }
+
+        function renderJobs() {
+            const query = document.getElementById('phoneSearchInput').value.toLowerCase();
+            const activeContainer = document.getElementById('activeJobsGrid');
+            const archivedContainer = document.getElementById('archivedJobsGrid');
+            
+            const filtered = allJobs.filter(j => !query || j.phoneNumber.toLowerCase().includes(query) || j.customerName.toLowerCase().includes(query));
+            const active = filtered.filter(j => j.progress !== 'completed');
+            const archived = filtered.filter(j => j.progress === 'completed');
+
+            document.getElementById('activeCount').innerText = active.length;
+            document.getElementById('archivedCount').innerText = archived.length;
+
+            document.getElementById('noActiveJobs').classList.toggle('hidden', active.length > 0);
+            document.getElementById('noArchivedJobs').classList.toggle('hidden', archived.length > 0);
+
+            activeContainer.innerHTML = active.map(j => createJobCardHTML(j)).join('');
+            archivedContainer.innerHTML = archived.map(j => createJobCardHTML(j)).join('');
+        }
+
+        function createJobCardHTML(job) {
+            const isCompleted = job.progress === 'completed';
+            return `
+                <div class="bg-white p-4 rounded-lg border border-slate-300 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-mono font-bold text-slate-500">#${job.id.toString().slice(-5)}</span>
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded ${isCompleted ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'}">
+                                ${isCompleted ? 'COMPLETED' : job.progress.toUpperCase()}
+                            </span>
+                        </div>
+                        <h3 class="font-bold text-slate-800 text-sm">${job.customerName}</h3>
+                        <p class="text-xs text-slate-500 mb-2">📞 ${job.phoneNumber}</p>
+                        
+                        <div class="bg-slate-50 p-2 rounded border border-slate-200 text-xs space-y-1 mb-3">
+                            <div class="font-semibold text-slate-700">🚗 ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</div>
+                            <div class="text-[11px] text-blue-700 font-bold">🔧 Assigned: ${job.assignedTo}</div>
+                            <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
+                                <div class="omani-plate" style="height: 22px;">
+                                    <div class="omani-plate-header" style="font-size: 6px; padding: 0 4px;">OMAN</div>
+                                    <div class="omani-plate-body" style="background-color: ${job.plateColor}; padding: 0 6px; gap: 4px;">
+                                        <span style="font-size: 10px; font-weight: 900;">${job.plateCode}</span>
+                                        <span style="font-size: 10px; font-weight: 900;">${job.plateNumber}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-600 line-clamp-2 mb-3"><strong>Issue:</strong> ${job.complaints}</p>
+                    </div>
+                    <div class="pt-2 border-t border-slate-100 flex justify-end gap-1">
+                        <button onclick="openUpdateModal(${job.id})" class="text-[11px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">💬 Note</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openUpdateModal(jobId) {
+            document.getElementById('updateJobId').value = jobId;
+            document.getElementById('updateAuthorDisplay').innerText = currentUser.name;
+            document.getElementById('updateCommentText').value = '';
+            document.getElementById('updateModal').classList.remove('hidden');
+        }
+
+        function closeUpdateModal() {
+            document.getElementById('updateModal').classList.add('hidden');
+        }
+
+        async function submitTicketUpdate(e) {
+            e.preventDefault();
+            const jobId = Number(document.getElementById('updateJobId').value);
+            const text = document.getElementById('updateCommentText').value.trim();
+            const job = allJobs.find(j => j.id === jobId);
+            
+            if (job) {
+                job.updates.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    author: currentUser.name,
+                    actionType: 'note',
+                    text: text
+                });
+                job.updatesJson = JSON.stringify(job.updates);
+
+                try {
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'save', job: job })
+                    });
+                    closeUpdateModal();
+                    setTimeout(() => refreshData(true), 1000);
+                } catch (err) {
+                    console.error('Error posting update:', err);
+                }
+            }
+        }
+
+        window.onload = function() {
+            checkLoginState();
+            getStaffList();
         };
     </script>
 </body>
