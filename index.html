@@ -300,18 +300,39 @@
         <div id="updateModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
             <div class="win7-panel w-full max-w-lg overflow-hidden shadow-2xl">
                 <div class="win7-header px-4 py-3 flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">💬 Add Workshop Ticket Update</h3>
+                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">💬 Add Workshop Ticket Update & Status</h3>
                     <button onclick="closeUpdateModal()" class="text-slate-500 hover:text-slate-800 font-bold text-sm">✕</button>
                 </div>
                 <form onsubmit="submitTicketUpdate(event)" class="p-6 space-y-4">
                     <input type="hidden" id="updateJobId">
-                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <span class="text-xs text-blue-600 font-bold">Posting as:</span>
-                        <span id="updateAuthorDisplay" class="text-sm font-black text-slate-800 ml-1"></span>
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs text-blue-600 font-bold">Posting as:</span>
+                            <span id="updateAuthorDisplay" class="text-sm font-black text-slate-800 ml-1"></span>
+                        </div>
+                        <div>
+                            <span id="currentJobStatusBadge" class="px-2 py-0.5 text-[10px] font-bold rounded bg-blue-100 text-blue-800"></span>
+                        </div>
                     </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="block text-xs font-bold text-slate-700">Change Status</label>
+                            <select id="updateNewStatus" class="win7-input w-full p-2 text-sm font-bold bg-slate-50">
+                                <option value="created">Created</option>
+                                <option value="diagnosing">Diagnosing</option>
+                                <option value="waiting parts">Waiting Parts</option>
+                                <option value="repairing">Repairing</option>
+                                <option value="testing">Testing</option>
+                                <option value="ready">Ready</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="space-y-1">
                         <label class="block text-xs font-bold text-slate-700">Update Note *</label>
-                        <textarea id="updateCommentText" rows="4" required class="win7-input w-full p-2 text-sm" placeholder="Diagnostic updates..."></textarea>
+                        <textarea id="updateCommentText" rows="3" required class="win7-input w-full p-2 text-sm" placeholder="Diagnostic updates..."></textarea>
                     </div>
                     <div class="pt-4 border-t border-slate-200 flex justify-end gap-2">
                         <button type="button" onclick="closeUpdateModal()" class="win7-button px-4 py-2 text-xs font-semibold text-slate-600">Cancel</button>
@@ -727,9 +748,19 @@
         }
 
         function openUpdateModal(jobId) {
+            const job = allJobs.find(j => j.id === jobId);
+            if (!job) return;
+
             document.getElementById('updateJobId').value = jobId;
             document.getElementById('updateAuthorDisplay').innerText = currentUser.name;
             document.getElementById('updateCommentText').value = '';
+            
+            const statusSelect = document.getElementById('updateNewStatus');
+            statusSelect.value = job.progress || 'created';
+            
+            const badge = document.getElementById('currentJobStatusBadge');
+            badge.innerText = `Current: ${(job.progress || 'created').toUpperCase()}`;
+
             document.getElementById('updateModal').classList.remove('hidden');
         }
 
@@ -741,15 +772,26 @@
             e.preventDefault();
             const jobId = Number(document.getElementById('updateJobId').value);
             const text = document.getElementById('updateCommentText').value.trim();
+            const newStatus = document.getElementById('updateNewStatus').value;
             const job = allJobs.find(j => j.id === jobId);
             
             if (job) {
+                const oldStatus = job.progress || 'created';
+                job.progress = newStatus;
+                if (newStatus === 'completed') {
+                    job.closedAt = Date.now();
+                } else {
+                    job.closedAt = '';
+                }
+
+                let statusChangeText = oldStatus !== newStatus ? ` [Status changed from ${oldStatus.toUpperCase()} to ${newStatus.toUpperCase()}]` : '';
+
                 job.updates.unshift({
                     id: Date.now(),
                     timestamp: new Date().toLocaleString(),
                     author: currentUser.name,
-                    actionType: 'note',
-                    text: text
+                    actionType: oldStatus !== newStatus ? 'status_change' : 'note',
+                    text: text + statusChangeText
                 });
                 job.updatesJson = JSON.stringify(job.updates);
 
