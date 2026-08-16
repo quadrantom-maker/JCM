@@ -609,6 +609,7 @@
                                 </span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-800">${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</h3>
+                            <p class="text-[11px] text-blue-700 font-mono font-bold mb-1">ID: JCM-${job.id}</p>
                             <p class="text-xs text-slate-600 font-semibold mb-1">👤 ${job.customerName}</p>
                             <p class="text-xs text-slate-500 mb-2">📞 ${job.phoneNumber}</p>
                             <p class="text-xs text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 line-clamp-2 italic mb-3">"${job.complaints}"</p>
@@ -668,6 +669,7 @@
                                 <span class="text-[10px] text-slate-500 font-semibold">Completed</span>
                             </div>
                             <h3 class="font-bold text-sm text-slate-700">${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</h3>
+                            <p class="text-[11px] text-blue-700 font-mono font-bold mb-1">ID: JCM-${job.id}</p>
                             <p class="text-xs text-slate-500 mb-1">👤 ${job.customerName}</p>
                         </div>
                         <div class="pt-2 border-t border-slate-200 flex justify-end gap-2">
@@ -749,72 +751,85 @@
 
             // Create the document structure - Optimized for a single page
             printContainer.innerHTML = `
-                <div class="text-center border-b-2 border-slate-800 pb-4 mb-4">
-                    <img src="OIL OFFER.png" alt="JCM Logo" class="h-16 object-contain mx-auto mb-2" onerror="this.onerror=null;this.src='https://placehold.co/150x50/ffffff/1e293b?text=JCM+Logo';">
-                    <h1 class="text-2xl font-black text-slate-800 uppercase tracking-wider">JCM Report</h1>
-                    <p class="text-slate-500 mt-0.5 font-semibold text-[11px]">Official Job Card & Service Record</p>
+                <!-- Background Watermark -->
+                <div class="fixed inset-0 flex items-center justify-center opacity-[0.05] pointer-events-none z-0">
+                    <img src="OIL OFFER.png" class="w-full max-w-lg object-contain" onerror="this.style.display='none'">
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
-                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                            <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Information</h3>
+
+                <div class="relative z-10">
+                    <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-4">
+                        <div class="text-left">
+                            <h1 class="text-2xl font-black text-slate-800 uppercase tracking-wider">JCM Report</h1>
+                            <p class="text-slate-500 mt-0.5 font-semibold text-[11px]">Official Job Card & Service Record</p>
+                            <div class="mt-2 inline-block px-2 py-1 bg-slate-100 border border-slate-300 rounded">
+                                <span class="text-[10px] text-slate-500 uppercase font-bold">Job Card ID:</span>
+                                <span class="text-sm text-blue-700 font-mono font-black ml-1">JCM-${job.id}</span>
+                            </div>
                         </div>
-                        <div class="p-3 space-y-1.5 text-xs">
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Name:</span> ${job.customerName}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Phone:</span> ${job.phoneNumber}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Created By:</span> ${job.createdBy}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Date Logged:</span> ${new Date(job.createdAt).toLocaleString()}</p>
-                        </div>
+                        <img src="OIL OFFER.png" alt="JCM Logo" class="h-16 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/150x50/ffffff/1e293b?text=JCM+Logo';">
                     </div>
                     
-                    <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
-                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                            <h3 class="font-bold text-xs text-slate-800 uppercase">Vehicle Information</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
+                            <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                                <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Information</h3>
+                            </div>
+                            <div class="p-3 space-y-1.5 text-xs">
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Name:</span> ${job.customerName}</p>
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Phone:</span> ${job.phoneNumber}</p>
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Created By:</span> ${job.createdBy}</p>
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Date Logged:</span> ${new Date(job.createdAt).toLocaleString()}</p>
+                            </div>
                         </div>
-                        <div class="p-3 space-y-1.5 text-xs">
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Vehicle:</span> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</p>
-                            <p><span class="font-bold text-slate-600 inline-block w-20">VIN:</span> <span class="font-mono">${job.vinNumber || 'N/A'}</span></p>
-                            <p><span class="font-bold text-slate-600 inline-block w-20">Mileage:</span> ${job.mileage} KM</p>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="font-bold text-slate-600 inline-block w-20">License Plate:</span>
-                                <div class="omani-plate" style="background-color: ${job.plateColor || '#fde047'}; height: 24px;">
-                                    <div class="omani-plate-header" style="font-size: 7px; padding: 0 4px;"><span>OMAN</span></div>
-                                    <div class="omani-plate-body" style="padding: 0 6px; gap: 4px;">
-                                        <span class="text-[10px] font-black text-black">${job.plateCode || 'A'}</span>
-                                        <span class="text-xs font-black text-black">${job.plateNumber}</span>
+                        
+                        <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
+                            <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                                <h3 class="font-bold text-xs text-slate-800 uppercase">Vehicle Information</h3>
+                            </div>
+                            <div class="p-3 space-y-1.5 text-xs">
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Vehicle:</span> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</p>
+                                <p><span class="font-bold text-slate-600 inline-block w-20">VIN:</span> <span class="font-mono">${job.vinNumber || 'N/A'}</span></p>
+                                <p><span class="font-bold text-slate-600 inline-block w-20">Mileage:</span> ${job.mileage} KM</p>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <span class="font-bold text-slate-600 inline-block w-20">License Plate:</span>
+                                    <div class="omani-plate" style="background-color: ${job.plateColor || '#fde047'}; height: 24px;">
+                                        <div class="omani-plate-header" style="font-size: 7px; padding: 0 4px;"><span>OMAN</span></div>
+                                        <div class="omani-plate-body" style="padding: 0 6px; gap: 4px;">
+                                            <span class="text-[10px] font-black text-black">${job.plateCode || 'A'}</span>
+                                            <span class="text-xs font-black text-black">${job.plateNumber}</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="border border-slate-800 rounded-lg overflow-hidden mb-4 avoid-break">
-                    <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                        <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Complaints / Issues</h3>
+                    <div class="border border-slate-800 rounded-lg overflow-hidden mb-4 avoid-break">
+                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
+                            <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Complaints / Issues</h3>
+                        </div>
+                        <div class="p-3">
+                            <p class="text-xs text-slate-800 whitespace-pre-wrap font-medium leading-relaxed">${job.complaints}</p>
+                        </div>
                     </div>
-                    <div class="p-3">
-                        <p class="text-xs text-slate-800 whitespace-pre-wrap font-medium leading-relaxed">${job.complaints}</p>
-                    </div>
-                </div>
 
-                ${updatesHtml}
+                    ${updatesHtml}
 
-                <div class="mt-12 pt-4 flex justify-between px-12 avoid-break">
-                    <div class="text-center w-56">
-                        <div class="border-b-2 border-slate-800 w-full mb-2"></div>
-                        <p class="font-bold text-slate-800 uppercase text-xs">Technician Signature</p>
-                        <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
+                    <div class="mt-12 pt-4 flex justify-between px-12 avoid-break">
+                        <div class="text-center w-56">
+                            <div class="border-b-2 border-slate-800 w-full mb-2"></div>
+                            <p class="font-bold text-slate-800 uppercase text-xs">Technician Signature</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
+                        </div>
+                        <div class="text-center w-56">
+                            <div class="border-b-2 border-slate-800 w-full mb-2"></div>
+                            <p class="font-bold text-slate-800 uppercase text-xs">Final Control Signature</p>
+                            <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
+                        </div>
                     </div>
-                    <div class="text-center w-56">
-                        <div class="border-b-2 border-slate-800 w-full mb-2"></div>
-                        <p class="font-bold text-slate-800 uppercase text-xs">Final Control Signature</p>
-                        <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
+                    <div class="text-center mt-6 text-[10px] text-slate-400 avoid-break">
+                        Generated by JCM Cloud System
                     </div>
-                </div>
-                <div class="text-center mt-6 text-[10px] text-slate-400 avoid-break">
-                    Generated by JCM Cloud System
                 </div>
             `;
 
