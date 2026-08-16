@@ -547,6 +547,7 @@
 
         function createJobCardHTML(job) {
             const isCompleted = job.progress === 'completed';
+            const recentUpdates = (job.updates || []).slice(0, 3);
             return `
                 <div class="bg-white p-4 rounded-lg border border-slate-300 shadow-sm flex flex-col justify-between">
                     <div>
@@ -559,7 +560,7 @@
                         <h3 class="font-bold text-slate-800 text-sm">${job.customerName}</h3>
                         <p class="text-xs text-slate-500 mb-2">📞 ${job.phoneNumber}</p>
                         
-                        <div class="bg-slate-50 p-2 rounded border border-slate-200 text-xs space-y-1 mb-3">
+                        <div class="bg-slate-50 p-2 rounded border border-slate-200 text-xs space-y-1 mb-2">
                             <div class="font-semibold text-slate-700">🚗 ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</div>
                             <div class="text-[11px] text-blue-700 font-bold">🔧 Assigned: ${job.assignedTo}</div>
                             <div class="flex items-center gap-1.5 mt-1 pt-1 border-t border-slate-200">
@@ -572,7 +573,26 @@
                                 </div>
                             </div>
                         </div>
-                        <p class="text-xs text-slate-600 line-clamp-2 mb-3"><strong>Issue:</strong> ${job.complaints}</p>
+                        <p class="text-xs text-slate-600 mb-2"><strong>Issue:</strong> ${job.complaints}</p>
+
+                        <!-- Last 3 Updates Preview Section -->
+                        <div class="mb-3 bg-slate-50 border border-slate-200 rounded p-2">
+                            <div class="text-[10px] font-black uppercase tracking-wider text-slate-500 mb-1 flex items-center justify-between">
+                                <span>Recent Updates</span>
+                                <span class="text-[9px] text-slate-400 font-normal">(${recentUpdates.length})</span>
+                            </div>
+                            <div class="space-y-1 max-h-24 overflow-y-auto">
+                                ${recentUpdates.length > 0 ? recentUpdates.map(u => `
+                                    <div class="text-[11px] bg-white p-1.5 rounded border border-slate-200 shadow-2xs">
+                                        <div class="flex justify-between items-center text-[9px] text-slate-400">
+                                            <span class="font-bold text-slate-600">${u.author}</span>
+                                            <span>${u.timestamp.split(',')[0]}</span>
+                                        </div>
+                                        <p class="text-slate-700 mt-0.5 line-clamp-1">${u.text}</p>
+                                    </div>
+                                `).join('') : '<p class="text-[10px] text-slate-400 italic">No notes added yet.</p>'}
+                            </div>
+                        </div>
                     </div>
                     <div class="pt-2 border-t border-slate-100 flex flex-wrap justify-between items-center gap-1">
                         <div class="flex gap-1">
