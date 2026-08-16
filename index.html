@@ -110,8 +110,8 @@
 <body class="p-3 sm:p-6">
     <div class="max-w-7xl mx-auto main-app-container">
         <!-- Top Navigation / Header -->
-        <header class="win7-panel mb-6 p-4 flex flex-col sm:flex-row justify-between items-center gap-4 no-print">
-            <div class="flex items-center gap-3">
+        <header class="win7-panel mb-6 p-4 flex flex-col lg:flex-row justify-between items-center gap-4 no-print">
+            <div class="flex items-center gap-3 shrink-0">
                 <div class="w-10 h-10 rounded-lg bg-white border border-slate-300 flex items-center justify-center overflow-hidden shadow-inner p-1">
                     <img src="OIL OFFER.png" alt="JCM Logo" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/40x40/ffffff/1e293b?text=JCM';">
                 </div>
@@ -120,7 +120,16 @@
                     <p class="text-xs text-slate-500">Workshop Cloud Sync v3.0 • <span id="syncStatus" class="text-emerald-600 font-bold">🟢 Connected</span></p>
                 </div>
             </div>
-            <div class="flex flex-wrap items-center gap-2">
+
+            <!-- Search Bar -->
+            <div class="w-full lg:flex-1 max-w-md mx-auto">
+                <div class="relative flex items-center">
+                    <span class="absolute left-3 text-slate-400 text-sm">🔍</span>
+                    <input type="text" id="phoneSearchInput" oninput="renderJobs()" placeholder="Search by Phone Number..." class="win7-input w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 focus:bg-white placeholder-slate-400">
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-center lg:justify-end gap-2 shrink-0">
                 <button onclick="openConfigModal()" class="win7-button px-3 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
                     ⚙️ Cloud URL & Settings
                 </button>
@@ -562,8 +571,12 @@
             const noActive = document.getElementById('noActiveJobs');
             const noArchived = document.getElementById('noArchivedJobs');
 
-            const activeList = allJobs.filter(j => !j.closedAt && j.progress !== 'completed');
-            const archivedList = allJobs.filter(j => j.closedAt || j.progress === 'completed');
+            // Apply Phone Number Search Filter
+            const searchQuery = (document.getElementById('phoneSearchInput')?.value || '').trim().toLowerCase();
+            const filteredJobs = allJobs.filter(j => j.phoneNumber && String(j.phoneNumber).toLowerCase().includes(searchQuery));
+
+            const activeList = filteredJobs.filter(j => !j.closedAt && j.progress !== 'completed');
+            const archivedList = filteredJobs.filter(j => j.closedAt || j.progress === 'completed');
 
             document.getElementById('activeCount').innerText = activeList.length;
             document.getElementById('archivedCount').innerText = archivedList.length;
