@@ -548,11 +548,16 @@
         }
 
         function renderJobs() {
-            const query = document.getElementById('phoneSearchInput').value.toLowerCase();
+            const query = document.getElementById('phoneSearchInput').value.toLowerCase().trim();
             const activeContainer = document.getElementById('activeJobsGrid');
             const archivedContainer = document.getElementById('archivedJobsGrid');
             
-            const filtered = allJobs.filter(j => !query || j.phoneNumber.toLowerCase().includes(query) || j.customerName.toLowerCase().includes(query));
+            const filtered = allJobs.filter(j => {
+                if (!query) return true;
+                const custName = (j.customerName || '').toLowerCase();
+                const phone = (j.phoneNumber || '').toLowerCase();
+                return custName.includes(query) || phone.includes(query);
+            });
             const active = filtered.filter(j => j.progress !== 'completed');
             const archived = filtered.filter(j => j.progress === 'completed');
 
