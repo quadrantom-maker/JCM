@@ -166,7 +166,6 @@
 
         async function fetchAllData() {
             try {
-                // Fetch staff
                 const resStaff = await fetch(scriptUrl + '?action=getStaff');
                 const dataStaff = await resStaff.json();
                 if (dataStaff && dataStaff.length > 0) {
@@ -174,7 +173,6 @@
                     renderStaffTable();
                 }
 
-                // Fetch jobs for metrics
                 const resJobs = await fetch(scriptUrl);
                 const dataJobs = await resJobs.json();
                 if (dataJobs) {
