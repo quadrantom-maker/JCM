@@ -97,18 +97,50 @@
 
         @media print {
             body { background: white !important; margin: 0; padding: 0; }
-            @page { margin: 10mm; } /* Minimizes default printer margins */
+            @page { margin: 10mm; }
             .no-print { display: none !important; }
             .print-only { display: block !important; }
             .win7-panel { border: 2px solid #000 !important; box-shadow: none !important; background: white !important; }
-            .main-app-container { display: none !important; } /* Hides main UI during print */
-            .avoid-break { page-break-inside: avoid; } /* Prevents sections from splitting across pages */
+            .main-app-container { display: none !important; }
+            .avoid-break { page-break-inside: avoid; }
         }
         .print-only { display: none; }
     </style>
 </head>
-<body class="p-3 sm:p-6">
-    <div class="max-w-7xl mx-auto main-app-container">
+<body class="p-3 sm:p-6 relative">
+
+    <!-- STAFF LOGIN SCREEN -->
+    <div id="staffLoginScreen" class="fixed inset-0 bg-slate-900 flex items-center justify-center z-[100]">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-blue-600">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-slate-200 overflow-hidden shadow-sm p-1.5">
+                    <img src="OIL OFFER.png" alt="JCM Logo" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/80x80/ffffff/1e293b?text=JCM';">
+                </div>
+                <h1 class="text-2xl font-black text-slate-800">Staff Login</h1>
+                <p class="text-sm text-slate-500 font-semibold mt-1">JCM Workshop Application</p>
+            </div>
+            
+            <form onsubmit="handleStaffLogin(event)" class="space-y-4">
+                <div id="loginError" class="hidden bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 font-bold text-center">
+                    Invalid credentials or account inactive.
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+                    <input type="text" id="loginUsername" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="loginPassword" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="Default is password123">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors shadow-lg shadow-blue-500/30 mt-4">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER (Hidden until login) -->
+    <div id="mainApp" class="max-w-7xl mx-auto main-app-container hidden">
         <!-- Top Navigation / Header -->
         <header class="win7-panel mb-6 p-4 flex flex-col lg:flex-row justify-between items-center gap-4 no-print">
             <div class="flex items-center gap-3 shrink-0">
@@ -116,8 +148,8 @@
                     <img src="OIL OFFER.png" alt="JCM Logo" class="w-full h-full object-contain" onerror="this.onerror=null;this.src='https://placehold.co/40x40/ffffff/1e293b?text=JCM';">
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold tracking-tight text-slate-800">Job Card Management (Google Sheets Cloud)</h1>
-                    <p class="text-xs text-slate-500">Workshop Cloud Sync v3.0 • <span id="syncStatus" class="text-emerald-600 font-bold">🟢 Connected</span></p>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-800">Job Card Management</h1>
+                    <p class="text-xs text-slate-500">Workshop Cloud Sync • <span id="syncStatus" class="text-emerald-600 font-bold">🟢 Connected</span></p>
                 </div>
             </div>
 
@@ -130,14 +162,13 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-center lg:justify-end gap-2 shrink-0">
-                <button onclick="openConfigModal()" class="win7-button px-3 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    ⚙️ Cloud URL & Settings
-                </button>
+                <div class="flex items-center gap-2 mr-2 px-3 py-1 bg-white border border-slate-300 rounded-md shadow-inner">
+                    <span class="text-xs font-bold text-slate-500">👤 User:</span>
+                    <span id="currentUserDisplay" class="text-xs font-black text-blue-700"></span>
+                    <button onclick="handleLogout()" class="ml-2 text-[10px] text-red-500 hover:text-red-700 font-bold underline">Logout</button>
+                </div>
                 <button onclick="refreshData()" class="win7-button px-3 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    🔄 Sync Now
-                </button>
-                <button onclick="openSettingsModal()" class="win7-button px-3 py-1.5 text-xs font-semibold text-slate-700 flex items-center gap-1.5">
-                    🔊 Audio
+                    🔄 Sync
                 </button>
                 <button onclick="toggleJobForm()" id="toggleFormBtn" class="win7-button px-4 py-1.5 text-xs font-bold bg-gradient-to-r from-blue-500 to-sky-500 text-white border-blue-600 hover:from-blue-600 hover:to-sky-600 flex items-center gap-1.5 shadow-sm">
                     ➕ New Job Card
@@ -149,7 +180,7 @@
         <div id="loadingOverlay" class="fixed inset-0 bg-black/20 backdrop-blur-[2px] z-50 flex items-center justify-center hidden no-print">
             <div class="win7-panel px-6 py-4 flex items-center gap-3 shadow-xl">
                 <div class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-xs font-bold text-slate-700">Syncing with Google Sheets Database...</span>
+                <span class="text-xs font-bold text-slate-700">Syncing with Cloud...</span>
             </div>
         </div>
 
@@ -160,6 +191,7 @@
             </div>
             <form id="jobForm" onsubmit="handleJobSubmit(event)" class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <input type="hidden" id="editId">
+                <input type="hidden" id="createdBy">
                 
                 <div class="space-y-1">
                     <label class="block text-xs font-bold text-slate-700">Customer Name *</label>
@@ -170,8 +202,11 @@
                     <input type="tel" id="phoneNumber" required pattern="^[0-9+\-\s()]*$" oninput="this.value = this.value.replace(/[^0-9+\-\s()]/g, '')" class="win7-input w-full px-3 py-1.5 text-sm" placeholder="e.g. +968 91234567">
                 </div>
                 <div class="space-y-1">
-                    <label class="block text-xs font-bold text-slate-700">Created By (Staff) *</label>
-                    <input type="text" id="createdBy" required class="win7-input w-full px-3 py-1.5 text-sm" placeholder="e.g. Mike Smith">
+                    <label class="block text-xs font-bold text-slate-700 text-blue-700">Assign Technician *</label>
+                    <select id="assignedTo" required class="win7-input w-full px-3 py-1.5 text-sm border-blue-300 bg-blue-50">
+                        <option value="">-- Select Staff --</option>
+                        <!-- Populated by JS -->
+                    </select>
                 </div>
                 <div class="space-y-1">
                     <label class="block text-xs font-bold text-slate-700">VIN Number</label>
@@ -242,7 +277,6 @@
                     <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
                         🔧 Active Workshop Jobs (<span id="activeCount">0</span>)
                     </h2>
-                    <div class="text-xs text-slate-500">Cloud Synchronized Database</div>
                 </div>
                 <div id="activeJobsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
                 <div id="noActiveJobs" class="text-center py-12 text-slate-400 text-sm italic hidden">No active job cards found in Google Sheet.</div>
@@ -259,7 +293,7 @@
             </section>
         </main>
 
-        <!-- Modals for Ticket Updates, Settings & Google Script Endpoint Configuration -->
+        <!-- Update Modal -->
         <div id="updateModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
             <div class="win7-panel w-full max-w-lg overflow-hidden shadow-2xl">
                 <div class="win7-header px-4 py-3 flex justify-between items-center">
@@ -268,9 +302,9 @@
                 </div>
                 <form onsubmit="submitTicketUpdate(event)" class="p-6 space-y-4">
                     <input type="hidden" id="updateJobId">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">Staff Name *</label>
-                        <input type="text" id="updateAuthor" required class="win7-input w-full px-3 py-2 text-sm" placeholder="e.g. Master Tech Ahmed">
+                    <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <span class="text-xs text-blue-600 font-bold">Posting as:</span>
+                        <span id="updateAuthorDisplay" class="text-sm font-black text-slate-800 ml-1"></span>
                     </div>
                     <div class="space-y-1">
                         <label class="block text-xs font-bold text-slate-700">Update Note *</label>
@@ -284,91 +318,105 @@
             </div>
         </div>
 
-        <div id="configModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
-            <div class="win7-panel w-full max-w-md overflow-hidden shadow-2xl">
-                <div class="win7-header px-4 py-3 flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">⚙️ Google Sheets Endpoint Config</h3>
-                    <button onclick="closeConfigModal()" class="text-slate-500 hover:text-slate-800 font-bold text-sm">✕</button>
-                </div>
-                <div class="p-6 space-y-4">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">Google Apps Script Web App URL *</label>
-                        <input type="text" id="scriptUrlInput" class="win7-input w-full px-3 py-2 text-sm font-mono text-xs" placeholder="https://script.google.com/macros/s/.../exec">
-                    </div>
-                    <p class="text-[11px] text-slate-500">Paste your deployed Google Apps Script URL here so all visitors share the same live cloud sheet.</p>
-                    <div class="pt-4 border-t border-slate-200 flex justify-end gap-2">
-                        <button onclick="saveConfigModal()" class="win7-button px-5 py-2 text-xs font-bold bg-blue-600 text-white border-blue-700">Save & Connect</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden no-print">
-            <div class="win7-panel w-full max-w-md overflow-hidden shadow-2xl">
-                <div class="win7-header px-4 py-3 flex justify-between items-center">
-                    <h3 class="text-sm font-bold text-slate-800">⚙️ Audio & Narration Settings</h3>
-                    <button onclick="closeSettingsModal()" class="text-slate-500 hover:text-slate-800 font-bold text-sm">✕</button>
-                </div>
-                <div class="p-6 space-y-4">
-                    <div class="space-y-1">
-                        <label class="block text-xs font-bold text-slate-700">Select Voice</label>
-                        <select id="voiceSelect" class="win7-input w-full px-3 py-2 text-sm"></select>
-                    </div>
-                    <div class="pt-4 border-t border-slate-200 flex justify-end gap-2">
-                        <button onclick="closeSettingsModal()" class="win7-button px-5 py-2 text-xs font-bold bg-blue-600 text-white border-blue-700">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Print Container (Hidden on screen, visible on print) -->
+    <!-- Print Container -->
     <div id="printContainer" class="print-only max-w-4xl mx-auto p-8 bg-white text-black font-sans"></div>
 
     <script>
-        let defaultScriptUrl = 'https://script.google.com/macros/s/AKfycbzZPuop8dj9iK65KZUkl_wQLn2FE1cRYs2hoXZ2xA6FOuJsv8OV2Kdjoh1vzMdFsJSm/exec';
-        let scriptUrl = localStorage.getItem('jcm_script_url') || defaultScriptUrl;
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyawoJ4JOVamiW8pAoEqkOToWbIavs-5lxXpGzmOnFg3C-h651mNjen_uN0HAeCMMyT/exec';
         let allJobs = [];
-        let speechSettings = { rate: 1.0, pitch: 1.0, voiceIndex: 0 };
-        let availableVoices = [];
+        let currentUser = null;
+        let cloudStaffList = null;
 
-        function loadVoices() {
-            if (!('speechSynthesis' in window)) return;
-            availableVoices = window.speechSynthesis.getVoices();
-            const select = document.getElementById('voiceSelect');
-            select.innerHTML = '';
-            availableVoices.forEach((voice, index) => {
-                const opt = document.createElement('option');
-                opt.value = index;
-                opt.textContent = `${voice.name} (${voice.lang})`;
-                if (index === speechSettings.voiceIndex) opt.selected = true;
-                select.appendChild(opt);
-            });
-        }
-        if ('speechSynthesis' in window) {
-            loadVoices();
-            window.speechSynthesis.onvoiceschanged = loadVoices;
+        // --- AUTHENTICATION & STAFF LOGIC ---
+        async function getStaffList() {
+            if (cloudStaffList) return cloudStaffList; // return cached list if already loaded
+
+            const defaultStaff = [
+                { id: 1, name: 'Admin User', role: 'Garage Owner', username: 'admin', active: true },
+                { id: 2, name: 'Master Tech Ahmed', role: 'Lead Technician', username: 'ahmed.tech', active: true },
+                { id: 3, name: 'Receptionist Sarah', role: 'Service Advisor', username: 'sarah.front', active: true }
+            ];
+
+            try {
+                const res = await fetch(scriptUrl + '?action=getStaff');
+                const data = await res.json();
+                if (data && data.length > 0) {
+                    cloudStaffList = data;
+                    return data;
+                }
+            } catch (err) {
+                console.error("Could not fetch staff from cloud, using local fallback.", err);
+            }
+            
+            const stored = localStorage.getItem('jcm_shared_staff');
+            cloudStaffList = stored ? JSON.parse(stored) : defaultStaff;
+            return cloudStaffList;
         }
 
-        function speakText(text) {
-            if (!('speechSynthesis' in window)) return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(text);
-            window.speechSynthesis.speak(utterance);
+        function checkLoginState() {
+            const sessionData = sessionStorage.getItem('jcm_logged_in_user');
+            if (sessionData) {
+                currentUser = JSON.parse(sessionData);
+                document.getElementById('staffLoginScreen').classList.add('hidden');
+                document.getElementById('mainApp').classList.remove('hidden');
+                document.getElementById('currentUserDisplay').innerText = currentUser.name;
+                document.getElementById('createdBy').value = currentUser.name;
+                populateStaffDropdowns();
+                refreshData(false);
+            } else {
+                document.getElementById('staffLoginScreen').classList.remove('hidden');
+                document.getElementById('mainApp').classList.add('hidden');
+            }
         }
 
-        // Fetch Data from Google Sheets
+        async function handleStaffLogin(e) {
+            e.preventDefault();
+            
+            // Show loading state on button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = 'Authenticating with Cloud...';
+            submitBtn.disabled = true;
+
+            const userIn = document.getElementById('loginUsername').value.trim();
+            const passIn = document.getElementById('loginPassword').value;
+            const staffList = await getStaffList();
+            
+            // Allow basic password check for demo purposes
+            const user = staffList.find(s => s.username === userIn && s.active);
+            if (user && (passIn === 'password123' || passIn === 'admin')) {
+                sessionStorage.setItem('jcm_logged_in_user', JSON.stringify(user));
+                checkLoginState();
+                document.getElementById('loginError').classList.add('hidden');
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+            
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+
+        function handleLogout() {
+            sessionStorage.removeItem('jcm_logged_in_user');
+            currentUser = null;
+            checkLoginState();
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+        }
+
+        async function populateStaffDropdowns() {
+            const staffList = await getStaffList();
+            const activeStaff = staffList.filter(s => s.active);
+            const select = document.getElementById('assignedTo');
+            select.innerHTML = '<option value="">-- Select Technician --</option>' + 
+                activeStaff.map(s => `<option value="${s.name}">${s.name} (${s.role})</option>`).join('');
+        }
+
+        // --- DATA SYNCING ---
         async function refreshData(background = false) {
-            if (!scriptUrl) {
-                document.getElementById('syncStatus').innerHTML = '⚠️ No Script URL Configured';
-                document.getElementById('syncStatus').className = 'text-amber-600 font-bold';
-                return;
-            }
-
-            // Only show loading spinner if it's a manual sync, not background periodic sync
-            if (!background) {
-                document.getElementById('loadingOverlay').classList.remove('hidden');
-            }
+            if (!background) document.getElementById('loadingOverlay').classList.remove('hidden');
             try {
                 const response = await fetch(scriptUrl);
                 const data = await response.json();
@@ -378,6 +426,7 @@
                     customerName: item.customerName,
                     phoneNumber: item.phoneNumber,
                     createdBy: item.createdBy,
+                    assignedTo: item.assignedTo || 'Unassigned', // NEW FIELD
                     vinNumber: item.vinNumber,
                     vehicleType: item.vehicleType,
                     vehicleModel: item.vehicleModel,
@@ -399,19 +448,11 @@
                 document.getElementById('syncStatus').innerHTML = '🔴 Sync Failed';
                 document.getElementById('syncStatus').className = 'text-red-600 font-bold';
             } finally {
-                if (!background) {
-                    document.getElementById('loadingOverlay').classList.add('hidden');
-                }
+                if (!background) document.getElementById('loadingOverlay').classList.add('hidden');
             }
         }
 
-        // Save / Update Job via Google Apps Script POST
         async function saveJobToCloud(jobData) {
-            if (!scriptUrl) {
-                openConfigModal();
-                return;
-            }
-            // Perform background sync update without locking the entire UI overlay
             try {
                 await fetch(scriptUrl, {
                     method: 'POST',
@@ -419,13 +460,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'save', job: jobData })
                 });
-                // Silently refresh in the background after save commit
-                setTimeout(() => {
-                    refreshData(true);
-                }, 1200);
+                setTimeout(() => refreshData(true), 1200);
             } catch (err) {
                 console.error('Save error:', err);
-                speakText("Failed to save to cloud sheet. Check your network or URL.");
             }
         }
 
@@ -437,6 +474,7 @@
                 btn.classList.add('bg-slate-700');
                 document.getElementById('jobForm').reset();
                 document.getElementById('editId').value = '';
+                document.getElementById('createdBy').value = currentUser.name;
                 document.getElementById('formTitle').innerHTML = '📝 Create New Job Card';
             } else {
                 container.classList.add('hidden');
@@ -448,7 +486,6 @@
             event.preventDefault();
             const editId = document.getElementById('editId').value;
             const now = Date.now();
-            const creator = document.getElementById('createdBy').value.trim();
             const initialNoteText = document.getElementById('initialUpdateNote').value.trim();
 
             let existingJob = editId ? allJobs.find(j => j.id === Number(editId)) : null;
@@ -458,7 +495,8 @@
                 updatesList.unshift({
                     id: Date.now(),
                     timestamp: new Date().toLocaleString(),
-                    author: creator || 'Staff',
+                    author: currentUser.name,
+                    actionType: 'note',
                     text: initialNoteText || 'Job card registered into cloud system.'
                 });
             }
@@ -468,7 +506,8 @@
                 createdAt: existingJob ? existingJob.createdAt : now,
                 customerName: document.getElementById('customerName').value.trim(),
                 phoneNumber: document.getElementById('phoneNumber').value.trim(),
-                createdBy: creator,
+                createdBy: currentUser.name, // Tied to logged in user
+                assignedTo: document.getElementById('assignedTo').value, // New assignment logic
                 vinNumber: document.getElementById('vinNumber').value.trim().toUpperCase(),
                 vehicleType: document.getElementById('vehicleType').value.trim(),
                 vehicleModel: document.getElementById('vehicleModel').value.trim(),
@@ -483,382 +522,11 @@
                 closedAt: existingJob ? existingJob.closedAt : ''
             };
 
-            saveJobToCloud(jobData);
-            toggleJobForm();
-            speakText(`Job Card saved to Google Sheets for plate ${jobData.plateNumber}`);
-        }
-
-        function updateJobProgress(id, newProgress) {
-            const job = allJobs.find(j => j.id === id);
-            if (!job) return;
-            job.progress = newProgress;
-            if (!job.updates) job.updates = [];
-            job.updates.unshift({
-                id: Date.now(),
-                timestamp: new Date().toLocaleString(),
-                author: 'System Workflow',
-                text: `Status changed to [${newProgress.replace('_', ' ').toUpperCase()}]`
-            });
-
-            const payload = { ...job, updatesJson: JSON.stringify(job.updates) };
-            saveJobToCloud(payload);
-        }
-
-        function archiveJob(id) {
-            const job = allJobs.find(j => j.id === id);
-            if (!job) return;
-            job.progress = 'completed';
-            job.closedAt = Date.now();
-            const payload = { ...job, updatesJson: JSON.stringify(job.updates) };
-            saveJobToCloud(payload);
-        }
-
-        function restoreJob(id) {
-            const job = allJobs.find(j => j.id === id);
-            if (!job) return;
-            job.closedAt = '';
-            job.progress = 'in_progress';
-            const payload = { ...job, updatesJson: JSON.stringify(job.updates) };
-            saveJobToCloud(payload);
-        }
-
-        function openUpdateModal(id) {
-            document.getElementById('updateJobId').value = id;
-            document.getElementById('updateAuthor').value = '';
-            document.getElementById('updateCommentText').value = '';
-            document.getElementById('updateModal').classList.remove('hidden');
-        }
-        function closeUpdateModal() { document.getElementById('updateModal').classList.add('hidden'); }
-
-        function submitTicketUpdate(event) {
-            event.preventDefault();
-            const jobId = Number(document.getElementById('updateJobId').value);
-            const author = document.getElementById('updateAuthor').value.trim();
-            const comment = document.getElementById('updateCommentText').value.trim();
-
-            const job = allJobs.find(j => j.id === jobId);
-            if (!job) return;
-
-            if (!job.updates) job.updates = [];
-            job.updates.unshift({
-                id: Date.now(),
-                timestamp: new Date().toLocaleString(),
-                author: author,
-                text: comment
-            });
-
-            const payload = { ...job, updatesJson: JSON.stringify(job.updates) };
-            saveJobToCloud(payload);
-            closeUpdateModal();
-        }
-
-        function getTimeSince(timestamp) {
-            if (!timestamp) return 'Just now';
-            const diff = Math.max(0, Date.now() - timestamp);
-            const minutes = Math.floor(diff / 60000);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (days > 0) return `${days}d ${hours % 24}h`;
-            if (hours > 0) return `${hours}h ${minutes % 60}m`;
-            if (minutes > 0) return `${minutes}m`;
-            return 'Just now';
-        }
-
-        function renderJobs() {
-            const activeGrid = document.getElementById('activeJobsGrid');
-            const archivedGrid = document.getElementById('archivedJobsGrid');
-            const noActive = document.getElementById('noActiveJobs');
-            const noArchived = document.getElementById('noArchivedJobs');
-
-            // Apply Phone Number Search Filter
-            const searchQuery = (document.getElementById('phoneSearchInput')?.value || '').trim().toLowerCase();
-            const filteredJobs = allJobs.filter(j => j.phoneNumber && String(j.phoneNumber).toLowerCase().includes(searchQuery));
-
-            const activeList = filteredJobs.filter(j => !j.closedAt && j.progress !== 'completed');
-            const archivedList = filteredJobs.filter(j => j.closedAt || j.progress === 'completed');
-
-            document.getElementById('activeCount').innerText = activeList.length;
-            document.getElementById('archivedCount').innerText = archivedList.length;
-
-            activeGrid.innerHTML = '';
-            if (activeList.length === 0) {
-                noActive.classList.remove('hidden');
-            } else {
-                noActive.classList.add('hidden');
-                activeList.forEach(job => {
-                    let progressPercent = 25;
-                    if (job.progress === 'in_progress') progressPercent = 55;
-                    if (job.progress === 'on_hold') progressPercent = 75;
-
-                    let updatesHtml = '';
-                    const updatesArr = Array.isArray(job.updates) ? job.updates : [];
-                    updatesArr.slice(0, 2).forEach(up => {
-                        updatesHtml += `
-                            <div class="bg-white p-2 rounded border border-slate-200 text-[11px] space-y-0.5">
-                                <div class="flex justify-between text-slate-500 text-[10px] font-semibold border-b border-slate-100 pb-0.5">
-                                    <span>👤 ${up.author}</span>
-                                    <span>${up.timestamp}</span>
-                                </div>
-                                <p class="text-slate-700">${up.text}</p>
-                            </div>
-                        `;
-                    });
-
-                    const card = document.createElement('div');
-                    card.className = 'win7-panel p-4 flex flex-col justify-between gap-3 shadow-sm';
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex flex-nowrap items-center justify-between gap-2 mb-3">
-                                <div class="omani-plate shrink-0" style="background-color: ${job.plateColor || '#fde047'};">
-                                    <div class="omani-plate-header"><span>OMAN</span></div>
-                                    <div class="omani-plate-body">
-                                        <span class="text-xs font-black text-black">${job.plateCode || 'A'}</span>
-                                        <span class="text-sm font-black text-black">${job.plateNumber}</span>
-                                    </div>
-                                </div>
-                                <span class="time-elapsed text-[10px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 h-[28px] shrink-0 flex items-center rounded border border-amber-200" data-timestamp="${job.createdAt}">
-                                    ⏱️ ${getTimeSince(job.createdAt)}
-                                </span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-800">${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</h3>
-                            <p class="text-[11px] text-blue-700 font-mono font-bold mb-1">ID: JCM-${job.id}</p>
-                            <p class="text-xs text-slate-600 font-semibold mb-1">👤 ${job.customerName}</p>
-                            <p class="text-xs text-slate-500 mb-2">📞 ${job.phoneNumber}</p>
-                            <p class="text-xs text-slate-600 bg-slate-100 p-2 rounded border border-slate-200 line-clamp-2 italic mb-3">"${job.complaints}"</p>
-
-                            <div class="bg-slate-200/80 p-2 rounded border border-slate-300 space-y-1 mb-3">
-                                <div class="flex justify-between items-center text-[11px] font-bold text-slate-700">
-                                    <span>Status:</span>
-                                    <select onchange="updateJobProgress(${job.id}, this.value)" class="win7-input px-1 py-0.5 text-[11px] font-bold">
-                                        <option value="created" ${job.progress === 'created' ? 'selected' : ''}>Created</option>
-                                        <option value="in_progress" ${job.progress === 'in_progress' ? 'selected' : ''}>In Progress</option>
-                                        <option value="on_hold" ${job.progress === 'on_hold' ? 'selected' : ''}>On Hold</option>
-                                    </select>
-                                </div>
-                                <div class="w-full bg-slate-300 h-2 rounded-full overflow-hidden">
-                                    <div class="h-full bg-blue-500" style="width: ${progressPercent}%"></div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-100 p-2 rounded border border-slate-300 space-y-1.5 mb-2">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-[11px] font-bold text-slate-700">Ticket Updates (${updatesArr.length})</span>
-                                    <button onclick="openUpdateModal(${job.id})" class="win7-button px-2 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-700">+ Note</button>
-                                </div>
-                                <div class="space-y-1 max-h-28 overflow-y-auto">${updatesHtml}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center justify-between pt-2 border-t border-slate-200">
-                            <div class="flex gap-2">
-                                <button onclick="loadJobForEdit(${job.id})" class="win7-button px-2 py-1 text-[11px] font-semibold">✏️ Edit</button>
-                                <button onclick="printJobCard(${job.id})" class="win7-button px-2 py-1 text-[11px] font-bold text-blue-700">🖨️ Print</button>
-                            </div>
-                            <button onclick="archiveJob(${job.id})" class="win7-button px-2 py-1 text-[11px] font-bold bg-emerald-50 text-emerald-800 border-emerald-300">✅ Done</button>
-                        </div>
-                    `;
-                    activeGrid.appendChild(card);
-                });
-            }
-
-            archivedGrid.innerHTML = '';
-            if (archivedList.length === 0) {
-                noArchived.classList.remove('hidden');
-            } else {
-                noArchived.classList.add('hidden');
-                archivedList.forEach(job => {
-                    const card = document.createElement('div');
-                    card.className = 'win7-panel p-4 flex flex-col justify-between gap-3 bg-slate-50 border-slate-300';
-                    card.innerHTML = `
-                        <div>
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="omani-plate shrink-0" style="background-color: ${job.plateColor || '#fde047'};">
-                                    <div class="omani-plate-header"><span>OMAN</span></div>
-                                    <div class="omani-plate-body">
-                                        <span class="text-xs font-black text-black">${job.plateCode || 'A'}</span>
-                                        <span class="text-sm font-black text-black">${job.plateNumber}</span>
-                                    </div>
-                                </div>
-                                <span class="text-[10px] text-slate-500 font-semibold">Completed</span>
-                            </div>
-                            <h3 class="font-bold text-sm text-slate-700">${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</h3>
-                            <p class="text-[11px] text-blue-700 font-mono font-bold mb-1">ID: JCM-${job.id}</p>
-                            <p class="text-xs text-slate-500 mb-1">👤 ${job.customerName}</p>
-                        </div>
-                        <div class="pt-2 border-t border-slate-200 flex justify-end gap-2">
-                            <button onclick="printJobCard(${job.id})" class="win7-button px-3 py-1 text-[11px] font-bold text-blue-700">🖨️ Print</button>
-                            <button onclick="restoreJob(${job.id})" class="win7-button px-3 py-1 text-[11px] font-bold bg-emerald-50 text-emerald-700 border-emerald-300">🔄 Restore</button>
-                        </div>
-                    `;
-                    archivedGrid.appendChild(card);
-                });
-            }
-        }
-
-        function loadJobForEdit(id) {
-            const job = allJobs.find(j => j.id === id);
-            if (!job) return;
-            document.getElementById('editId').value = job.id;
-            document.getElementById('customerName').value = job.customerName;
-            document.getElementById('phoneNumber').value = job.phoneNumber;
-            document.getElementById('createdBy').value = job.createdBy || '';
-            document.getElementById('vinNumber').value = job.vinNumber;
-            document.getElementById('vehicleType').value = job.vehicleType;
-            document.getElementById('vehicleModel').value = job.vehicleModel;
-            document.getElementById('vehicleYear').value = job.vehicleYear;
-            document.getElementById('mileage').value = job.mileage;
-            document.getElementById('plateCode').value = job.plateCode || 'A';
-            document.getElementById('plateNumber').value = job.plateNumber;
-            document.getElementById('plateColor').value = job.plateColor;
-            document.getElementById('complaints').value = job.complaints;
-
-            document.getElementById('formTitle').innerHTML = `📝 Edit Job Card (#${job.plateCode} ${job.plateNumber})`;
-            if (document.getElementById('jobFormContainer').classList.contains('hidden')) {
-                toggleJobForm();
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function openConfigModal() {
-            document.getElementById('scriptUrlInput').value = scriptUrl;
-            document.getElementById('configModal').classList.remove('hidden');
-        }
-        function closeConfigModal() { document.getElementById('configModal').classList.add('hidden'); }
-        function saveConfigModal() {
-            scriptUrl = document.getElementById('scriptUrlInput').value.trim();
-            localStorage.setItem('jcm_script_url', scriptUrl);
-            closeConfigModal();
-            refreshData();
-        }
-
-        function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
-        function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-        function printJobCard(id) {
-            const job = allJobs.find(j => j.id === id);
-            if (!job) return;
-
-            const printContainer = document.getElementById('printContainer');
-            
-            // Format updates - using tighter spacing to fit on one page
-            let updatesHtml = '';
-            const updatesArr = Array.isArray(job.updates) ? job.updates : [];
-            if (updatesArr.length > 0) {
-                updatesHtml = `
-                    <div class="mt-4 border border-slate-800 rounded-lg overflow-hidden avoid-break">
-                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                            <h3 class="font-bold text-xs text-slate-800 uppercase">Ticket Updates History</h3>
-                        </div>
-                        <div class="p-3 space-y-2">
-                `;
-                updatesArr.forEach(up => {
-                    updatesHtml += `
-                        <div class="border-b border-slate-200 pb-1.5 last:border-0 last:pb-0">
-                            <p class="text-[11px] text-slate-500 mb-0.5"><strong>${up.timestamp}</strong> - By: ${up.author}</p>
-                            <p class="text-xs text-slate-800">${up.text}</p>
-                        </div>
-                    `;
-                });
-                updatesHtml += `</div></div>`;
-            }
-
-            // Create the document structure - Optimized for a single page
-            printContainer.innerHTML = `
-                <div class="relative z-10">
-                    <div class="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-4">
-                        <div class="text-left">
-                            <h1 class="text-2xl font-black text-slate-800 uppercase tracking-wider">JCM Report</h1>
-                            <p class="text-slate-500 mt-0.5 font-semibold text-[11px]">Official Job Card & Service Record</p>
-                            <div class="mt-2 inline-block px-2 py-1 bg-slate-100 border border-slate-300 rounded">
-                                <span class="text-[10px] text-slate-500 uppercase font-bold">Job Card ID:</span>
-                                <span class="text-sm text-blue-700 font-mono font-black ml-1">JCM-${job.id}</span>
-                            </div>
-                        </div>
-                        <img src="OIL OFFER.png" alt="JCM Logo" class="h-16 object-contain" onerror="this.onerror=null;this.src='https://placehold.co/150x50/ffffff/1e293b?text=JCM+Logo';">
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4 mb-4">
-                        <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
-                            <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                                <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Information</h3>
-                            </div>
-                            <div class="p-3 space-y-1.5 text-xs">
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Name:</span> ${job.customerName}</p>
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Phone:</span> ${job.phoneNumber}</p>
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Created By:</span> ${job.createdBy}</p>
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Date Logged:</span> ${new Date(job.createdAt).toLocaleString()}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="border border-slate-800 rounded-lg overflow-hidden avoid-break">
-                            <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                                <h3 class="font-bold text-xs text-slate-800 uppercase">Vehicle Information</h3>
-                            </div>
-                            <div class="p-3 space-y-1.5 text-xs">
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Vehicle:</span> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</p>
-                                <p><span class="font-bold text-slate-600 inline-block w-20">VIN:</span> <span class="font-mono">${job.vinNumber || 'N/A'}</span></p>
-                                <p><span class="font-bold text-slate-600 inline-block w-20">Mileage:</span> ${job.mileage} KM</p>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <span class="font-bold text-slate-600 inline-block w-20">License Plate:</span>
-                                    <div class="omani-plate" style="background-color: ${job.plateColor || '#fde047'}; height: 24px;">
-                                        <div class="omani-plate-header" style="font-size: 7px; padding: 0 4px;"><span>OMAN</span></div>
-                                        <div class="omani-plate-body" style="padding: 0 6px; gap: 4px;">
-                                            <span class="text-[10px] font-black text-black">${job.plateCode || 'A'}</span>
-                                            <span class="text-xs font-black text-black">${job.plateNumber}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="border border-slate-800 rounded-lg overflow-hidden mb-4 avoid-break">
-                        <div class="bg-slate-100 border-b border-slate-800 p-1.5">
-                            <h3 class="font-bold text-xs text-slate-800 uppercase">Customer Complaints / Issues</h3>
-                        </div>
-                        <div class="p-3">
-                            <p class="text-xs text-slate-800 whitespace-pre-wrap font-medium leading-relaxed">${job.complaints}</p>
-                        </div>
-                    </div>
-
-                    ${updatesHtml}
-
-                    <div class="mt-12 pt-4 flex justify-between px-12 avoid-break">
-                        <div class="text-center w-56">
-                            <div class="border-b-2 border-slate-800 w-full mb-2"></div>
-                            <p class="font-bold text-slate-800 uppercase text-xs">Technician Signature</p>
-                            <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
-                        </div>
-                        <div class="text-center w-56">
-                            <div class="border-b-2 border-slate-800 w-full mb-2"></div>
-                            <p class="font-bold text-slate-800 uppercase text-xs">Final Control Signature</p>
-                            <p class="text-[10px] text-slate-500 mt-1">Date: ____/____/20__</p>
-                        </div>
-                    </div>
-                    <div class="text-center mt-6 text-[10px] text-slate-400 avoid-break">
-                        Generated by JCM Cloud System
-                    </div>
-                </div>
-            `;
-
-            // Trigger the browser's print dialog
-            setTimeout(() => {
-                window.print();
-            }, 100);
-        }
-
-        window.onload = function() {
-            if (!scriptUrl) {
-                scriptUrl = defaultScriptUrl;
-                localStorage.setItem('jcm_script_url', scriptUrl);
-            }
-            refreshData(false);
-            // Auto-refresh cloud sheet silently in background every 30 seconds for live multi-user sync
-            setInterval(() => {
-                if (scriptUrl) refreshData(true);
-            }, 30000);
-            
-            // Auto-update the "Time Since Opened" timers locally every minute
+        window.onload = async function() {
+            // Pre-fetch staff list in background so it's ready for login check
+            getStaffList();
+            checkLoginState();
+            setInterval(() => { if (currentUser) refreshData(true); }, 30000);
             setInterval(() => {
                 document.querySelectorAll('.time-elapsed').forEach(el => {
                     const ts = Number(el.getAttribute('data-timestamp'));
