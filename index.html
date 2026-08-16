@@ -62,6 +62,33 @@
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 5px rgba(59, 130, 246, 0.3);
         }
 
+        /* Omani License Plate CSS Styling */
+        .omani-plate {
+            display: inline-flex;
+            border: 2px solid #1e293b;
+            border-radius: 4px;
+            overflow: hidden;
+            background: white;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            font-family: monospace;
+        }
+        .omani-plate-header {
+            background: #dc2626;
+            color: white;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #1e293b;
+            letter-spacing: 1px;
+        }
+        .omani-plate-body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+        }
+
         @media print {
             body { background: white !important; margin: 0; padding: 0; }
             @page { margin: 10mm; }
@@ -122,7 +149,7 @@
             <div class="w-full lg:flex-1 max-w-md mx-auto">
                 <div class="relative flex items-center">
                     <span class="absolute left-3 text-slate-400 text-sm">🔍</span>
-                    <input type="text" id="phoneSearchInput" oninput="renderJobs()" placeholder="Search by Phone Number..." class="win7-input w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 focus:bg-white placeholder-slate-400">
+                    <input type="text" id="phoneSearchInput" oninput="renderJobs()" placeholder="Search by Phone Number or Customer Name..." class="win7-input w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 focus:bg-white placeholder-slate-400">
                 </div>
             </div>
 
@@ -280,6 +307,7 @@
         </div>
     </div>
 
+    <!-- PRINT PREVIEW & TEMPLATE -->
     <div id="printContainer" class="print-only max-w-4xl mx-auto p-8 bg-white text-black font-sans"></div>
 
     <script>
@@ -531,11 +559,131 @@
                         </div>
                         <p class="text-xs text-slate-600 line-clamp-2 mb-3"><strong>Issue:</strong> ${job.complaints}</p>
                     </div>
-                    <div class="pt-2 border-t border-slate-100 flex justify-end gap-1">
-                        <button onclick="openUpdateModal(${job.id})" class="text-[11px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">💬 Note</button>
+                    <div class="pt-2 border-t border-slate-100 flex flex-wrap justify-between items-center gap-1">
+                        <div class="flex gap-1">
+                            <button onclick="openUpdateModal(${job.id})" class="text-[11px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">💬 Note</button>
+                            <button onclick="printJobCard(${job.id})" class="text-[11px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300">🖨️ Print</button>
+                        </div>
+                        <div>
+                            ${isCompleted 
+                                ? `<button onclick="toggleJobCompletion(${job.id}, 'created')" class="text-[11px] font-bold px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded border border-amber-300">Reopen</button>` 
+                                : `<button onclick="toggleJobCompletion(${job.id}, 'completed')" class="text-[11px] font-bold px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded border border-emerald-300">✅ Complete</button>`
+                            }
+                        </div>
                     </div>
                 </div>
             `;
+        }
+
+        async function toggleJobCompletion(jobId, newStatus) {
+            const job = allJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            job.progress = newStatus;
+            if (newStatus === 'completed') {
+                job.closedAt = Date.now();
+                job.updates.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    author: currentUser.name,
+                    actionType: 'status',
+                    text: 'Job card marked as completed.'
+                });
+            } else {
+                job.closedAt = '';
+                job.updates.unshift({
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    author: currentUser.name,
+                    actionType: 'status',
+                    text: 'Job card reopened.'
+                });
+            }
+            job.updatesJson = JSON.stringify(job.updates);
+
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'save', job: job })
+                });
+                setTimeout(() => refreshData(true), 800);
+            } catch (err) {
+                console.error('Error updating job status:', err);
+            }
+        }
+
+        function printJobCard(jobId) {
+            const job = allJobs.find(j => j.id === jobId);
+            if (!job) return;
+
+            const printContainer = document.getElementById('printContainer');
+            printContainer.innerHTML = `
+                <div class="border-2 border-slate-800 p-6 rounded-lg space-y-6">
+                    <div class="flex justify-between items-center border-b-2 border-slate-800 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-slate-100 border border-slate-300 rounded flex items-center justify-center font-black">JCM</div>
+                            <div>
+                                <h1 class="text-xl font-black">WORKSHOP JOB CARD</h1>
+                                <p class="text-xs text-slate-500">Official Cloud Ticket #${job.id.toString().slice(-5)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="omani-plate" style="height: 28px;">
+                                <div class="omani-plate-header" style="font-size: 8px; padding: 0 6px;">OMAN</div>
+                                <div class="omani-plate-body" style="background-color: ${job.plateColor}; padding: 0 8px; gap: 6px;">
+                                    <span style="font-size: 14px; font-weight: 900;">${job.plateCode}</span>
+                                    <span style="font-size: 14px; font-weight: 900;">${job.plateNumber}</span>
+                                </div>
+                            </div>
+                            <p class="text-xs font-semibold mt-1">Date: ${new Date(job.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 text-sm bg-slate-50 p-4 rounded border border-slate-200">
+                        <div><strong>Customer Name:</strong> ${job.customerName}</div>
+                        <div><strong>Phone Number:</strong> ${job.phoneNumber}</div>
+                        <div><strong>Vehicle:</strong> ${job.vehicleYear} ${job.vehicleType} ${job.vehicleModel}</div>
+                        <div><strong>Mileage:</strong> ${job.mileage} KM</div>
+                        <div><strong>VIN:</strong> ${job.vinNumber || 'N/A'}</div>
+                        <div><strong>Assigned Tech:</strong> ${job.assignedTo}</div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-sm uppercase text-slate-700 mb-1">Customer Complaints / Issues</h3>
+                        <div class="p-3 bg-slate-50 border border-slate-200 rounded text-sm whitespace-pre-wrap">${job.complaints}</div>
+                    </div>
+
+                    <div>
+                        <h3 class="font-bold text-sm uppercase text-slate-700 mb-2">Workshop Service Logs</h3>
+                        <div class="border border-slate-200 rounded divide-y divide-slate-200 text-xs">
+                            ${job.updates.map(u => `
+                                <div class="p-2.5 flex justify-between items-start">
+                                    <div>
+                                        <p class="font-semibold text-slate-800">${u.text}</p>
+                                        <span class="text-[10px] text-slate-500">By: ${u.author}</span>
+                                    </div>
+                                    <span class="text-[10px] text-slate-400 font-mono">${u.timestamp}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-8 pt-12 mt-12 border-t border-slate-300 text-xs">
+                        <div class="text-center">
+                            <div class="border-b border-slate-400 pb-8 mb-1"></div>
+                            <p class="font-bold">Customer Signature</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-b border-slate-400 pb-8 mb-1"></div>
+                            <p class="font-bold">Authorized Workshop Signature</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            window.print();
         }
 
         function openUpdateModal(jobId) {
