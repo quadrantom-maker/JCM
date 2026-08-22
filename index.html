@@ -134,7 +134,7 @@
             <div class="w-full lg:flex-1 max-w-md mx-auto">
                 <div class="relative flex items-center">
                     <span class="absolute left-3 text-slate-400 text-sm">🔍</span>
-                    <input type="text" id="phoneSearchInput" oninput="renderJobs()" placeholder="Search by Phone Number or Customer Name..." class="win7-input w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 focus:bg-white placeholder-slate-400">
+                    <input type="text" id="phoneSearchInput" oninput="renderJobs()" placeholder="Search by Plate Number, Phone or Customer Name..." class="win7-input w-full pl-9 pr-3 py-2 text-sm font-semibold text-slate-700 bg-slate-50 focus:bg-white placeholder-slate-400">
                 </div>
             </div>
 
@@ -320,6 +320,7 @@
         let allJobs = [];
         let currentUser = null;
         let cloudStaffList = null;
+        let timerInterval = null;
 
         function speakCallout(text) {
             if ('speechSynthesis' in window) {
@@ -334,7 +335,38 @@
 
         window.onload = function() {
             checkLoginState();
+            startTimerEngine();
         };
+
+        function startTimerEngine() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                document.querySelectorAll('[data-timer-start]').forEach(el => {
+                    const startMs = Number(el.getAttribute('data-timer-start'));
+                    if (startMs && !isNaN(startMs)) {
+                        el.innerText = formatDuration(now - startMs, true);
+                    }
+                });
+            }, 1000);
+        }
+
+        function formatDuration(ms, includeSeconds = false) {
+            if (!ms || isNaN(ms) || ms < 0) ms = 0;
+            const totalSeconds = Math.floor(ms / 1000);
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+
+            let result = '';
+            if (days > 0) result += `${days}d `;
+            result += `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m`;
+            if (includeSeconds) {
+                result += ` ${String(seconds).padStart(2, '0')}s`;
+            }
+            return result.trim();
+        }
 
         async function getStaffList() {
             if (cloudStaffList) return cloudStaffList;
@@ -517,7 +549,7 @@
                 progress: existingJob ? existingJob.progress : 'created',
                 complaints: document.getElementById('complaints').value.trim(),
                 updatesJson: JSON.stringify(updatesList),
-                closedAt: existingJob ? existingJob.closedAt : ''
+                closedAt: existingJob ? (existingJob.closedAt || '') : ''
             };
 
             try {
@@ -549,7 +581,17 @@
                 if (!query) return true;
                 const custName = String(j.customerName || '').toLowerCase();
                 const phone = String(j.phoneNumber || '').toLowerCase();
-                return custName.includes(query) || phone.includes(query);
+                const plateCode = String(j.plateCode || '').toLowerCase();
+                const plateNum = String(j.plateNumber || '').toLowerCase();
+                const fullPlate = `${plateCode}${plateNum}`;
+                const fullPlateSpaced = `${plateCode} ${plateNum}`;
+
+                return custName.includes(query) || 
+                       phone.includes(query) || 
+                       plateCode.includes(query) || 
+                       plateNum.includes(query) || 
+                       fullPlate.includes(query) || 
+                       fullPlateSpaced.includes(query);
             });
             const active = filtered.filter(j => j.progress !== 'completed');
             const archived = filtered.filter(j => j.progress === 'completed');
@@ -570,6 +612,7 @@
             const plateNum = job.plateNumber || '1234';
             const updates = job.updates || [];
             const lastThreeUpdates = updates.slice(0, 3);
+            const isCompleted = job.progress === 'completed';
 
             let statusColor = 'bg-blue-100 text-blue-800';
             if (job.progress === 'diagnosing') statusColor = 'bg-amber-100 text-amber-800';
@@ -578,6 +621,10 @@
             if (job.progress === 'testing') statusColor = 'bg-sky-100 text-sky-800';
             if (job.progress === 'ready') statusColor = 'bg-emerald-100 text-emerald-800';
             if (job.progress === 'completed') statusColor = 'bg-slate-200 text-slate-800';
+
+            const now = Date.now();
+            const createdAtMs = job.createdAt || job.id;
+            const closedAtMs = job.closedAt || now;
 
             return `
                 <div class="win7-panel p-4 flex flex-col justify-between space-y-3 relative overflow-hidden">
@@ -599,6 +646,22 @@
                             </div>
                             <span class="text-xs font-bold text-slate-700">${job.vehicleType} ${job.vehicleModel} (${job.vehicleYear})</span>
                         </div>
+
+                        ${!isCompleted ? `
+                            <div class="mt-2 text-xs bg-amber-50/90 border border-amber-200 p-1.5 rounded flex items-center justify-between font-bold text-amber-900">
+                                <span class="flex items-center gap-1 text-[11px]">⏱️ Active Time:</span>
+                                <span class="font-mono text-xs font-black text-amber-800" data-timer-start="${createdAtMs}">
+                                    ${formatDuration(now - createdAtMs, true)}
+                                </span>
+                            </div>
+                        ` : `
+                            <div class="mt-2 text-xs bg-emerald-50/90 border border-emerald-200 p-1.5 rounded flex items-center justify-between font-bold text-emerald-900">
+                                <span class="flex items-center gap-1 text-[11px]">🏁 Completion Duration:</span>
+                                <span class="font-mono text-xs font-black text-emerald-800">
+                                    ${formatDuration(closedAtMs - createdAtMs, false)}
+                                </span>
+                            </div>
+                        `}
                         
                         <div class="mt-2 text-xs bg-slate-100 p-2 rounded border border-slate-200">
                             <span class="font-bold text-slate-700">Complaint:</span> ${job.complaints}
@@ -665,8 +728,11 @@
 
             job.progress = newStatus;
             job.updatesJson = JSON.stringify(updatesList);
-            if (newStatus === 'completed' && !job.closedAt) {
-                job.closedAt = Date.now();
+            
+            if (newStatus === 'completed') {
+                if (!job.closedAt) job.closedAt = Date.now();
+            } else {
+                job.closedAt = '';
             }
 
             try {
@@ -718,13 +784,15 @@
             if (!job) return;
             const updates = job.updates || [];
             const container = document.getElementById('printContainer');
+            const createdAtMs = job.createdAt || job.id;
+            const closedAtMs = job.closedAt || Date.now();
             
             container.innerHTML = `
                 <div class="border-2 border-slate-900 p-6 rounded-lg bg-white">
                     <div class="flex justify-between items-center border-b-2 border-slate-900 pb-4 mb-4">
                         <div>
                             <h1 class="text-2xl font-black uppercase">JCM Workshop Job Card</h1>
-                            <p class="text-xs text-slate-600">Ticket ID: #${job.id} • Date: ${new Date(job.createdAt).toLocaleString()}</p>
+                            <p class="text-xs text-slate-600">Ticket ID: #${job.id} • Date: ${new Date(createdAtMs).toLocaleString()}</p>
                         </div>
                         <div class="text-right">
                             <span class="px-3 py-1 bg-slate-900 text-white font-bold text-xs uppercase rounded">${job.progress}</span>
@@ -738,6 +806,7 @@
                         <div><strong>Vehicle:</strong> ${job.vehicleType} ${job.vehicleModel} (${job.vehicleYear})</div>
                         <div><strong>Plate:</strong> ${job.plateCode} - ${job.plateNumber}</div>
                         <div><strong>Mileage:</strong> ${job.mileage} KM</div>
+                        <div><strong>Elapsed / Turnaround Time:</strong> ${job.progress === 'completed' ? formatDuration(closedAtMs - createdAtMs) : formatDuration(Date.now() - createdAtMs, true)}</div>
                     </div>
 
                     <div class="mb-4 text-xs bg-slate-50 p-3 rounded border">
@@ -752,8 +821,8 @@
                     </div>
 
                     <div class="mt-12 pt-8 border-t border-slate-400 flex justify-between text-xs font-bold">
-                        <div>Customer Signature: ______________________</div>
                         <div>Technician Signature: ______________________</div>
+                        <div>Final Control Signature: ______________________</div>
                     </div>
                 </div>
             `;
